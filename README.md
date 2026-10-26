@@ -1,1 +1,1 @@
-# BeyongSyllabus-Admin
+# BeyondSyllabus-Admin
