@@ -22,10 +22,38 @@ export async function GET() {
   if (!admin) return NextResponse.json({ error: "Admin access required." }, { status: 403 });
   const { data, error } = await admin.client
     .from("syllabi")
-    .select("id, offering_id, storage_path, file_type, created_at")
+    .select(
+      "id, offering_id, storage_path, file_type, created_at, processing_status, verification_status, is_public",
+    )
     .order("created_at", { ascending: false })
     .limit(100);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  const [{ data: offerings, error: offeringsError }, { data: courses, error: coursesError }] =
+    await Promise.all([
+      admin.client
+        .from("course_offerings")
+        .select("id, course_id, semester, year")
+        .order("year", { ascending: false })
+        .limit(1000),
+      admin.client.from("courses").select("id, course_code, title").limit(1000),
+    ]);
+  if (offeringsError) {
+    return NextResponse.json({ error: offeringsError.message }, { status: 500 });
+  }
+  if (coursesError) {
+    return NextResponse.json({ error: coursesError.message }, { status: 500 });
+  }
+  const coursesById = new Map((courses ?? []).map((course) => [course.id, course]));
+  const offeringsById = new Map(
+    (offerings ?? []).map((offering) => [
+      offering.id,
+      {
+        ...offering,
+        course: coursesById.get(offering.course_id) ?? null,
+      },
+    ]),
+  );
 
   const fileResults = await Promise.all(
     (data ?? []).map(async (file) => {
@@ -49,10 +77,17 @@ export async function GET() {
       offering_id: result.file.offering_id,
       file_type: result.file.file_type,
       created_at: result.file.created_at,
+      processing_status: result.file.processing_status,
+      verification_status: result.file.verification_status,
+      is_public: result.file.is_public,
+      offering: offeringsById.get(result.file.offering_id) ?? null,
       url: result.url,
     };
   }).filter((file) => file !== null);
-  return NextResponse.json({ files });
+  return NextResponse.json({
+    files,
+    offerings: Array.from(offeringsById.values()),
+  });
 }
 
 export async function POST(request: NextRequest) {

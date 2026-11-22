@@ -33,19 +33,18 @@ The root route redirects to `/dashboard`. Admins sign in with Google; the
 server checks the user's verified Supabase Auth email against `ADMIN_EMAILS`
 before rendering the console and before every privileged API request.
 
-The console lists Supabase Auth users and manages the configured prompt-chain,
-term, AI generation, LLM, signup allowlist, and image resources. Editable
-records use JSON to accommodate database columns that vary by deployment.
-Queries are capped at 100 records. Read-only resources include users, AI media,
-generation requests, AI generations, and LLM responses.
+The console includes searchable, paginated Supabase Auth user management;
+account signup and last-sign-in details; and a course leaderboard ranked by
+positive votes on generated outputs. Selecting a course shows its resume
+bullets and skillsets with their recommendation counts. Admin data access
+continues to be restricted to the `ADMIN_EMAILS` allowlist.
 
-The Images section also lists private syllabus records and creates short-lived
-signed viewing links for the private `syllabi` Storage bucket. Admins can upload
-a PDF up to 4 MB for an existing course offering by entering its offering UUID;
-the upload creates a `syllabi` record associated with the signed-in admin.
+The Syllabus Files section lists recent files with course and offering details,
+creates short-lived signed viewing links for the private `syllabi` Storage
+bucket, and lets admins upload a PDF up to 4 MB by selecting a course offering.
 Deleting a syllabus removes its database record and stored PDF.
 
-The relevant database tables and `syllabi` bucket must exist in the connected
-Supabase project. The configured table names and key fields are centralized in
-`src/lib/admin-resources.ts`; adjust them there if your schema uses different
-names. `/api/health` returns a minimal JSON liveness response.
+The relevant `profiles`, `courses`, `departments`, `votes`, `ai_generations`,
+`course_offerings`, and `syllabi` tables, along with the `syllabi` Storage
+bucket, must exist in the connected Supabase project. `/api/health` returns a
+minimal JSON liveness response.
